@@ -13,15 +13,15 @@ import {
 import { memo, useEffect, useMemo } from 'react';
 const getTitle = (threadItem: ThreadItem) => {
     if (threadItem.mode === ChatMode.Deep) {
-        return 'Research';
+        return 'تحقیق';
     }
     if ([ChatMode.DEEPSEEK_R1].includes(threadItem.mode)) {
-        return 'Thinking';
+        return 'در حال تفکر';
     }
     if (threadItem.mode === ChatMode.Pro) {
-        return 'Pro Search';
+        return 'جستجوی پیشرفته';
     }
-    return 'Steps';
+    return 'مراحل';
 };
 
 const getIcon = (threadItem: ThreadItem) => {
@@ -36,10 +36,10 @@ const getIcon = (threadItem: ThreadItem) => {
 
 const getNote = (threadItem: ThreadItem) => {
     if (threadItem.mode === ChatMode.Deep) {
-        return 'This process takes approximately 15 minutes. Please keep the tab open during this time.';
+        return 'این فرایند حدود ۱۵ دقیقه طول می‌کشد. لطفاً برگه را باز نگه دارید.';
     }
     if (threadItem.mode === ChatMode.Pro) {
-        return 'This process takes approximately 5 minutes. Please keep the tab open during this time.';
+        return 'این فرایند حدود ۵ دقیقه طول می‌کشد. لطفاً برگه را باز نگه دارید.';
     }
     return '';
 };
@@ -63,7 +63,7 @@ const ToolStep = memo(({ toolCall, toolResult }: ToolStepProps) => (
             <div className="bg-border/50 min-h-full w-[1px] flex-1" />
         </div>
         <div className="flex w-full flex-1 flex-col gap-2 overflow-hidden pb-2">
-            <p className="text-sm">Using the following tool</p>
+            <p className="text-sm">در حال استفاده از ابزار زیر</p>
             {toolCall && <ToolCallStep toolCall={toolCall} />}
             {toolResult && <ToolResultStep toolResult={toolResult} />}
         </div>
@@ -186,7 +186,7 @@ export const Steps = ({ steps, threadItem }: { steps: Step[]; threadItem: Thread
                 <div className="flex-1" />
 
                 <Badge variant="default" size="sm">
-                    {stepCounts} {stepCounts === 1 ? 'Step' : 'Steps'}
+                    {stepCounts} مرحله
                 </Badge>
                 <IconChevronRight size={14} strokeWidth={2} />
             </div>

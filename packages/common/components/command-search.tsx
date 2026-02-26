@@ -1,6 +1,6 @@
 'use client';
 import { useRootContext } from '@repo/common/context';
-import { useAppStore, useChatStore } from '@repo/common/store';
+import { useChatStore } from '@repo/common/store';
 import {
     cn,
     CommandDialog,
@@ -33,8 +33,6 @@ export const CommandSearch = () => {
     const router = useRouter();
     const { theme, setTheme } = useTheme();
     const clearThreads = useChatStore(state => state.clearAllThreads);
-    const setIsSettingsOpen = useAppStore(state => state.setIsSettingsOpen);
-    const setSettingTab = useAppStore(state => state.setSettingTab);
     const groupedThreads: Record<string, typeof threads> = {
         today: [],
         yesterday: [],
@@ -44,11 +42,11 @@ export const CommandSearch = () => {
     };
 
     const groupsNames = {
-        today: 'Today',
-        yesterday: 'Yesterday',
-        last7Days: 'Last 7 Days',
-        last30Days: 'Last 30 Days',
-        previousMonths: 'Previous Months',
+        today: 'امروز',
+        yesterday: 'دیروز',
+        last7Days: '۷ روز گذشته',
+        last30Days: '۳۰ روز گذشته',
+        previousMonths: 'ماه‌های قبل',
     };
 
     threads.forEach(thread => {
@@ -91,7 +89,7 @@ export const CommandSearch = () => {
 
     const actions = [
         {
-            name: 'New Thread',
+            name: 'گفتگوی جدید',
             icon: IconPlus,
             action: () => {
                 router.push('/chat');
@@ -99,7 +97,7 @@ export const CommandSearch = () => {
             },
         },
         {
-            name: 'Delete Thread',
+            name: 'حذف گفتگو',
             icon: IconTrash,
             action: async () => {
                 const thread = await getThread(currentThreadId as string);
@@ -111,16 +109,15 @@ export const CommandSearch = () => {
             },
         },
         {
-            name: 'Use your own API key',
+            name: 'از کلید API خود استفاده کنید',
             icon: IconKey,
             action: () => {
-                setIsSettingsOpen(true);
-                setSettingTab('api-keys');
+                router.push('/settings');
                 onClose();
             },
         },
         {
-            name: 'Remove All Threads',
+            name: 'حذف همه گفتگوها',
             icon: IconTrash,
             action: () => {
                 clearThreads();
@@ -133,7 +130,7 @@ export const CommandSearch = () => {
     return (
         <CommandDialog open={isCommandSearchOpen} onOpenChange={setIsCommandSearchOpen}>
             <div className="flex w-full flex-row items-center gap-2 p-0.5">
-                <CommandInput placeholder="Search..." className="w-full" />
+                <CommandInput placeholder="جستجو..." className="w-full" />
                 <div className="flex shrink-0 items-center gap-1 px-2">
                     <Kbd className="h-5 w-5">
                         <IconCommand size={12} strokeWidth={2} className="shrink-0" />
@@ -145,7 +142,7 @@ export const CommandSearch = () => {
                 <div className="border-border h-[1px] w-full border-b" />
             </div>
             <CommandList className="max-h-[420px] overflow-y-auto p-0.5 pt-1.5">
-                <CommandEmpty>No results found.</CommandEmpty>
+                <CommandEmpty>نتیجه‌ای یافت نشد.</CommandEmpty>
                 <CommandGroup>
                     {actions.map(action => (
                         <CommandItem

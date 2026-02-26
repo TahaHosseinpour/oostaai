@@ -72,7 +72,7 @@ export const FeedbackWidget = () => {
                         {!isSuccess ? (
                             <>
                                 <div className="flex w-full flex-row justify-between px-4 pt-4">
-                                    <p className="text-sm font-medium">Help us improve</p>
+                                    <p className="text-sm font-medium">به بهبود ما کمک کنید</p>
                                     <Button
                                         variant="ghost"
                                         size="icon-xs"
@@ -83,7 +83,7 @@ export const FeedbackWidget = () => {
                                     </Button>
                                 </div>
                                 <Textarea
-                                    placeholder="Share your thoughts or suggestions to help us improve."
+                                    placeholder="نظرات یا پیشنهادات خود را برای بهبود ما به اشتراک بگذارید."
                                     value={feedback}
                                     className="placeholder:text-muted-foreground/50 border-none bg-transparent px-4 py-2"
                                     onChange={e => setFeedback(e.target.value)}
@@ -97,7 +97,7 @@ export const FeedbackWidget = () => {
                                         rounded="full"
                                         onClick={handleSubmit}
                                     >
-                                        {isSubmitting ? 'Sending...' : 'Send Feedback'}
+                                        {isSubmitting ? 'در حال ارسال...' : 'ارسال بازخورد'}
                                     </Button>
                                 </div>
                             </>
@@ -111,9 +111,9 @@ export const FeedbackWidget = () => {
                                     />
                                 </div>
                                 <div className="flex flex-col gap-0">
-                                    <p className="text-sm font-medium">Thank you!</p>
+                                    <p className="text-sm font-medium">ممنون!</p>
                                     <p className="text-muted-foreground/50 text-sm">
-                                        Your feedback has been sent.
+                                        بازخورد شما ارسال شد.
                                     </p>
                                 </div>
                             </div>

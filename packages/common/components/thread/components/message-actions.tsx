@@ -31,7 +31,7 @@ export const MessageActions = forwardRef<HTMLDivElement, MessageActionsProps>(
                                 copyToClipboard(ref.current || '');
                             }
                         }}
-                        tooltip="Copy"
+                        tooltip="کپی"
                     >
                         {status === 'copied' ? (
                             <IconCheck size={16} strokeWidth={2} />
@@ -52,7 +52,7 @@ export const MessageActions = forwardRef<HTMLDivElement, MessageActionsProps>(
                                     .join('\n')}`
                             );
                         }}
-                        tooltip="Copy Markdown"
+                        tooltip="کپی Markdown"
                     >
                         {markdownCopyStatus === 'copied' ? (
                             <IconCheck size={16} strokeWidth={2} />
@@ -64,7 +64,7 @@ export const MessageActions = forwardRef<HTMLDivElement, MessageActionsProps>(
                 {threadItem.status !== 'ERROR' && threadItem.answer?.status !== 'HUMAN_REVIEW' && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost-bordered" size="icon-sm" tooltip="Rewrite">
+                            <Button variant="ghost-bordered" size="icon-sm" tooltip="بازنویسی">
                                 <IconRefresh size={16} strokeWidth={2} />
                             </Button>
                         </DropdownMenuTrigger>
@@ -94,14 +94,14 @@ export const MessageActions = forwardRef<HTMLDivElement, MessageActionsProps>(
                         onClick={() => {
                             removeThreadItem(threadItem.id);
                         }}
-                        tooltip="Remove"
+                        tooltip="حذف"
                     >
                         <IconTrash size={16} strokeWidth={2} />
                     </Button>
                 )}
                 {threadItem.mode && (
                     <p className="text-muted-foreground px-2 text-xs">
-                        Generated with {getChatModeName(threadItem.mode)}
+                        تولیدشده با {getChatModeName(threadItem.mode)}
                     </p>
                 )}
             </div>

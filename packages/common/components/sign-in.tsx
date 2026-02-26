@@ -28,7 +28,7 @@ export const CustomSignIn = ({
     const handleVerify = async () => {
         // Check if code is complete
         if (code.length !== 6) {
-            setError('Please enter the complete 6-digit code');
+            setError('لطفاً کد ۶ رقمی کامل را وارد کنید');
             return;
         }
 
@@ -62,7 +62,7 @@ export const CustomSignIn = ({
                     }
 
                     console.error('Sign-in error:', error);
-                    setError('Something went wrong while signing in. Please try again.');
+                    setError('خطایی در ورود رخ داد. لطفاً دوباره تلاش کنید.');
                 }
             } else {
                 console.error('Verification error:', error);
@@ -192,7 +192,7 @@ export const CustomSignIn = ({
                         setError('Incorrect code. Please try again.');
                     } else {
                         console.error('Sign-in error:', error);
-                        setError('Something went wrong while signing in. Please try again.');
+                        setError('خطایی در ورود رخ داد. لطفاً دوباره تلاش کنید.');
                     }
                 }
             } else {
@@ -253,11 +253,11 @@ export const CustomSignIn = ({
                     if (isClerkAPIResponseError(error)) {
                         console.error('Error resending code:', error);
                     }
-                    setError('Failed to resend code. Please try again.');
+                    setError('ارسال مجدد کد ناموفق بود. لطفاً دوباره تلاش کنید.');
                 }
             } else {
                 console.error('Error resending code:', error);
-                setError('Failed to resend code. Please try again.');
+                setError('ارسال مجدد کد ناموفق بود. لطفاً دوباره تلاش کنید.');
             }
         } finally {
             // Wait a moment before allowing another resend (to prevent spam)
@@ -271,12 +271,12 @@ export const CustomSignIn = ({
         return (
             <div className="flex w-[300px] flex-col items-center gap-4">
                 <div className="flex flex-col items-center gap-1">
-                    <h2 className="font-clash text-foreground !text-brand text-center text-[24px] font-semibold leading-tight">
-                        Check your email
+                    <h2 className="text-foreground !text-brand text-center text-[24px] font-semibold leading-tight">
+                        ایمیل خود را بررسی کنید
                     </h2>
                     <p className="text-muted-foreground text-center text-sm">
-                        We've sent a code to your email. Please check your inbox and enter the code
-                        to continue.
+                        یک کد به ایمیل شما ارسال شد. لطفاً صندوق ورودی خود را بررسی کرده و کد را
+                        وارد کنید.
                     </p>
                 </div>
                 <InputOTP
@@ -296,21 +296,21 @@ export const CustomSignIn = ({
                     </InputOTPGroup>
                 </InputOTP>
                 <p className="text-muted-foreground text-center text-sm">
-                    Didn't receive an email?{' '}
+                    ایمیلی دریافت نکردید؟{' '}
                     <span
                         className={`hover:text-brand text-brand cursor-pointer underline ${
                             resending ? 'pointer-events-none opacity-70' : ''
                         }`}
                         onClick={handleSendCode}
                     >
-                        {resending ? 'Sending...' : 'Resend Code'}
+                        {resending ? 'در حال ارسال...' : 'ارسال مجدد کد'}
                     </span>
                 </p>
 
                 <div id="clerk-captcha"></div>
                 <div className="text-muted-foreground text-center text-sm">
                     {error && <p className="text-rose-400">{error}</p>}
-                    {resending && <p className="text-brand">Sending verification code...</p>}
+                    {resending && <p className="text-brand">در حال ارسال کد تأیید...</p>}
                 </div>
             </div>
         );
@@ -330,7 +330,7 @@ export const CustomSignIn = ({
             </Button>
             <div className="flex w-[320px] flex-col items-center gap-8">
                 <h2 className="text-muted-foreground/70 text-center text-[24px] font-semibold leading-tight">
-                    Sign in to unlock <br /> advanced research tools
+                    برای دسترسی به امکانات <br /> پیشرفته وارد شوید
                 </h2>
 
                 <div className="flex w-[300px] flex-col space-y-1.5">
@@ -344,7 +344,7 @@ export const CustomSignIn = ({
                         ) : (
                             <FaGoogle className=" size-3" />
                         )}
-                        {isLoading === 'google' ? 'Authenticating...' : 'Continue with Google'}
+                        {isLoading === 'google' ? 'در حال ورود...' : 'ادامه با Google'}
                     </Button>
 
                     <Button
@@ -357,23 +357,24 @@ export const CustomSignIn = ({
                         ) : (
                             <FaGithub className=" size-3" />
                         )}
-                        {isLoading === 'github' ? 'Authenticating...' : 'Continue with GitHub'}
+                        {isLoading === 'github' ? 'در حال ورود...' : 'ادامه با GitHub'}
                     </Button>
                 </div>
                 <div className="text-muted-foreground/50 w-full text-center text-xs">
                     <span className="text-muted-foreground/50">
-                        By using this app, you agree to the{' '}
+                        با استفاده از این اپلیکیشن، با{' '}
                     </span>
                     <a href="/terms" className="hover:text-foreground underline">
-                        Terms of Service
+                        شرایط خدمات
                     </a>{' '}
-                    and{' '}
+                    و{' '}
                     <a href="/privacy" className="hover:text-foreground underline">
-                        Privacy Policy
-                    </a>
+                        سیاست حریم خصوصی
+                    </a>{' '}
+                    موافقت می‌کنید.
                 </div>
                 <Button variant="ghost" size="sm" className="w-full" onClick={onClose}>
-                    Close
+                    بستن
                 </Button>
             </div>
         </>

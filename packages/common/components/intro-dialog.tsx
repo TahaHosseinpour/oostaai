@@ -27,31 +27,31 @@ export const IntroDialog = () => {
     const points = [
         {
             icon,
-            text: `**Privacy-focused**: Your chat history never leaves your device.`,
+            text: `**حریم خصوصی**: تاریخچه چت شما هرگز دستگاهتان را ترک نمی‌کند.`,
         },
         {
             icon,
-            text: `**Open source**: Fully transparent and modifiable. Easily deploy it yourself.`,
+            text: `**متن‌باز**: کاملاً شفاف و قابل تغییر. به راحتی خودتان اجرا کنید.`,
         },
         {
             icon,
-            text: `**Research-friendly**: Leverage Web Search, Pro Search, and Deep Research features.`,
+            text: `**مناسب تحقیق**: از جستجوی وب و قابلیت‌های پیشرفته پژوهشی بهره ببرید.`,
         },
         {
             icon,
-            text: `**Comprehensive model support**: Compatible with all mainstream model providers.`,
+            text: `**پشتیبانی جامع**: سازگار با تمام ارائه‌دهندگان اصلی مدل هوش مصنوعی.`,
         },
         {
             icon,
-            text: `**BYOK (Bring Your Own Key)**: Use your own API key for unlimited chat.`,
+            text: `**BYOK**: از کلید API خود برای چت نامحدود استفاده کنید.`,
         },
         {
             icon,
-            text: `**MCP Compatibility**: Connect with any MCP servers/tools (coming soon).`,
+            text: `**سازگاری با MCP**: به هر سرور یا ابزار MCP متصل شوید (به‌زودی).`,
         },
         {
             icon,
-            text: `**Usage Tracking**: Monitor your model usage without paying (coming soon).`,
+            text: `**ردیابی مصرف**: مصرف مدل خود را رایگان رصد کنید (به‌زودی).`,
         },
     ];
 
@@ -87,12 +87,12 @@ export const IntroDialog = () => {
                             </p>
                         </div>
                         <p className="text-base font-semibold">
-                            Private, Open-Source, and Built for You
+                            خصوصی، متن‌باز و ساخته‌شده برای شما
                         </p>
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <h3 className="text-sm font-semibold">Key benefits:</h3>
+                        <h3 className="text-sm font-semibold">مزایای اصلی:</h3>
 
                         <div className="flex flex-col items-start gap-1.5">
                             {points.map((point, index) => (

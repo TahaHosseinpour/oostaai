@@ -35,7 +35,7 @@ import { useParams, usePathname, useRouter } from 'next/navigation';
 export const Sidebar = () => {
     const { threadId: currentThreadId } = useParams();
     const pathname = usePathname();
-    const { setIsCommandSearchOpen } = useRootContext();
+    const { setIsCommandSearchOpen, setIsMobileSidebarOpen } = useRootContext();
     const isChatPage = pathname === '/chat';
     const threads = useChatStore(state => state.threads);
     const pinThread = useChatStore(state => state.pinThread);
@@ -49,7 +49,6 @@ export const Sidebar = () => {
     const clearAllThreads = useChatStore(state => state.clearAllThreads);
     const setIsSidebarOpen = useAppStore(state => state.setIsSidebarOpen);
     const isSidebarOpen = useAppStore(state => state.isSidebarOpen);
-    const setIsSettingsOpen = useAppStore(state => state.setIsSettingsOpen);
     const { push } = useRouter();
     const groupedThreads: Record<string, Thread[]> = {
         today: [],
@@ -109,7 +108,7 @@ export const Sidebar = () => {
                                 isPinned={thread.pinned}
                                 key={thread.id}
                                 dismiss={() => {
-                                    setIsSidebarOpen(prev => false);
+                                    setIsMobileSidebarOpen(false);
                                 }}
                                 isActive={thread.id === currentThreadId}
                             />
@@ -141,8 +140,8 @@ export const Sidebar = () => {
                         >
                             <Logo className="text-brand size-5" />
                             {isSidebarOpen && (
-                                <p className="font-clash text-foreground text-lg font-bold tracking-wide">
-                                    llmchat.co
+                                <p className="text-foreground text-lg font-bold tracking-wide">
+                                    دستیار AI
                                 </p>
                             )}
                         </motion.div>
@@ -150,13 +149,13 @@ export const Sidebar = () => {
                     {isSidebarOpen && (
                         <Button
                             variant="ghost"
-                            tooltip="Close Sidebar"
+                            tooltip="بستن نوار کناری"
                             tooltipSide="right"
                             size="icon-sm"
                             onClick={() => setIsSidebarOpen(prev => !prev)}
                             className={cn(!isSidebarOpen && 'mx-auto', 'mr-2')}
                         >
-                            <IconArrowBarLeft size={16} strokeWidth={2} />
+                            <IconArrowBarRight size={16} strokeWidth={2} />
                         </Button>
                     )}
                 </div>
@@ -174,12 +173,12 @@ export const Sidebar = () => {
                                 size={isSidebarOpen ? 'sm' : 'icon-sm'}
                                 variant="bordered"
                                 rounded="lg"
-                                tooltip={isSidebarOpen ? undefined : 'New Thread'}
+                                tooltip={isSidebarOpen ? undefined : 'گفتگوی جدید'}
                                 tooltipSide="right"
                                 className={cn(isSidebarOpen && 'relative w-full', 'justify-center')}
                             >
                                 <IconPlus size={16} strokeWidth={2} className={cn(isSidebarOpen)} />
-                                {isSidebarOpen && 'New'}
+                                {isSidebarOpen && 'جدید'}
                             </Button>
                         </Link>
                     ) : (
@@ -187,19 +186,19 @@ export const Sidebar = () => {
                             size={isSidebarOpen ? 'sm' : 'icon-sm'}
                             variant="bordered"
                             rounded="lg"
-                            tooltip={isSidebarOpen ? undefined : 'New Thread'}
+                            tooltip={isSidebarOpen ? undefined : 'گفتگوی جدید'}
                             tooltipSide="right"
                             className={cn(isSidebarOpen && 'relative w-full', 'justify-center')}
                         >
                             <IconPlus size={16} strokeWidth={2} className={cn(isSidebarOpen)} />
-                            {isSidebarOpen && 'New Thread'}
+                            {isSidebarOpen && 'گفتگوی جدید'}
                         </Button>
                     )}
                     <Button
                         size={isSidebarOpen ? 'sm' : 'icon-sm'}
                         variant="bordered"
                         rounded="lg"
-                        tooltip={isSidebarOpen ? undefined : 'Search'}
+                        tooltip={isSidebarOpen ? undefined : 'جستجو'}
                         tooltipSide="right"
                         className={cn(
                             isSidebarOpen && 'relative w-full',
@@ -208,7 +207,7 @@ export const Sidebar = () => {
                         onClick={() => setIsCommandSearchOpen(true)}
                     >
                         <IconSearch size={14} strokeWidth={2} className={cn(isSidebarOpen)} />
-                        {isSidebarOpen && 'Search'}
+                        {isSidebarOpen && 'جستجو'}
                         {isSidebarOpen && <div className="flex-1" />}
                         {isSidebarOpen && (
                             <div className="flex flex-row items-center gap-1">
@@ -268,7 +267,7 @@ export const Sidebar = () => {
                         )}
                     >
                         {renderGroup({
-                            title: 'Pinned',
+                            title: 'سنجاق‌شده',
                             threads: threads
                                 .filter(thread => thread.pinned)
                                 .sort((a, b) => b.pinnedAt.getTime() - a.pinnedAt.getTime()),
@@ -276,17 +275,17 @@ export const Sidebar = () => {
                             renderEmptyState: () => (
                                 <div className="border-hard flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-2">
                                     <p className="text-muted-foreground text-xs opacity-50">
-                                        No pinned threads
+                                        گفتگوی سنجاق‌شده‌ای وجود ندارد
                                     </p>
                                 </div>
                             ),
                         })}
-                        {renderGroup({ title: 'Today', threads: groupedThreads.today })}
-                        {renderGroup({ title: 'Yesterday', threads: groupedThreads.yesterday })}
-                        {renderGroup({ title: 'Last 7 Days', threads: groupedThreads.last7Days })}
-                        {renderGroup({ title: 'Last 30 Days', threads: groupedThreads.last30Days })}
+                        {renderGroup({ title: 'امروز', threads: groupedThreads.today })}
+                        {renderGroup({ title: 'دیروز', threads: groupedThreads.yesterday })}
+                        {renderGroup({ title: '۷ روز گذشته', threads: groupedThreads.last7Days })}
+                        {renderGroup({ title: '۳۰ روز گذشته', threads: groupedThreads.last30Days })}
                         {renderGroup({
-                            title: 'Previous Months',
+                            title: 'ماه‌های قبل',
                             threads: groupedThreads.previousMonths,
                         })}
                     </Flex>
@@ -304,12 +303,12 @@ export const Sidebar = () => {
                         <Button
                             variant="ghost"
                             size="icon"
-                            tooltip="Open Sidebar"
+                            tooltip="باز کردن نوار کناری"
                             tooltipSide="right"
                             onClick={() => setIsSidebarOpen(prev => !prev)}
                             className={cn(!isSidebarOpen && 'mx-auto')}
                         >
-                            <IconArrowBarRight size={16} strokeWidth={2} />
+                            <IconArrowBarLeft size={16} strokeWidth={2} />
                         </Button>
                     )}
                     {isSignedIn && (
@@ -354,26 +353,20 @@ export const Sidebar = () => {
                                 </div>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
+                                <DropdownMenuItem onClick={() => push('/settings')}>
                                     <IconSettings size={16} strokeWidth={2} />
-                                    Settings
+                                    تنظیمات
                                 </DropdownMenuItem>
-                                {/* {!isSignedIn && (
-                                <DropdownMenuItem onClick={() => push('/sign-in')}>
-                                    <IconUser size={16} strokeWidth={2} />
-                                    Log in
-                                </DropdownMenuItem>
-                            )} */}
                                 {isSignedIn && (
                                     <DropdownMenuItem onClick={() => openUserProfile()}>
                                         <IconUser size={16} strokeWidth={2} />
-                                        Profile
+                                        پروفایل
                                     </DropdownMenuItem>
                                 )}
                                 {isSignedIn && (
                                     <DropdownMenuItem onClick={() => signOut()}>
                                         <IconLogout size={16} strokeWidth={2} />
-                                        Logout
+                                        خروج
                                     </DropdownMenuItem>
                                 )}
                             </DropdownMenuContent>
@@ -386,14 +379,14 @@ export const Sidebar = () => {
                                 size="sm"
                                 rounded="lg"
                                 onClick={() => {
-                                    setIsSettingsOpen(true);
+                                    push('/settings');
                                 }}
                             >
                                 <IconSettings2 size={14} strokeWidth={2} />
-                                Settings
+                                تنظیمات
                             </Button>
                             <Button size="sm" rounded="lg" onClick={() => push('/sign-in')}>
-                                Log in / Sign up
+                                ورود / ثبت‌نام
                             </Button>
                         </div>
                     )}

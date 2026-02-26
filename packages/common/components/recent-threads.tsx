@@ -23,7 +23,7 @@ export const RecentThreads = () => {
     return (
         <div className="flex w-full flex-col px-1.5">
             <div className="flex flex-row items-center gap-2 px-1 py-2">
-                <p className="text-muted-foreground text-sm font-medium">Recent Messages</p>
+                <p className="text-muted-foreground text-sm font-medium">گفتگوهای اخیر</p>
                 <div className="flex-1" />
                 <Button
                     variant="ghost"
@@ -32,7 +32,7 @@ export const RecentThreads = () => {
                     className="text-muted-foreground"
                     onClick={() => setIsCommandSearchOpen(true)}
                 >
-                    View all <IconArrowRight strokeWidth={1.5} size={14} />
+                    مشاهده همه <IconArrowRight strokeWidth={1.5} size={14} />
                 </Button>
             </div>
             <div className="grid grid-cols-4 gap-2">

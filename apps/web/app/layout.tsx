@@ -5,49 +5,20 @@ import { TooltipProvider, cn } from '@repo/ui';
 import { GeistMono } from 'geist/font/mono';
 import type { Viewport } from 'next';
 import { Metadata } from 'next';
-import { Bricolage_Grotesque } from 'next/font/google';
 import localFont from 'next/font/local';
-
-const bricolage = Bricolage_Grotesque({
-    subsets: ['latin'],
-    variable: '--font-bricolage',
-});
 
 import './globals.css';
 
 export const metadata: Metadata = {
-    title: 'llmchat.co - Go Deeper with AI-Powered Research & Agentic Workflows',
-    description:
-        'Experience deep, AI-powered research with agentic workflows and a wide variety of models for advanced productivity.',
-    keywords: 'AI chat, LLM, language models, privacy, minimal UI, ollama, chatgpt',
-    authors: [{ name: 'Trendy design', url: 'https://trendy.design' }],
-    creator: 'Trendy design',
-    publisher: 'Trendy design',
+    title: 'دستیار هوش مصنوعی',
+    description: 'چت با مدل‌های پیشرفته هوش مصنوعی',
+    keywords: 'هوش مصنوعی, چت, مدل زبانی',
     openGraph: {
-        title: 'llmchat.co - Go Deeper with AI-Powered Research & Agentic Workflows',
-        siteName: 'llmchat.co',
-        description:
-            'Experience deep, AI-powered research with agentic workflows and a wide variety of models for advanced productivity.',
-        url: 'https://llmchat.co',
+        title: 'دستیار هوش مصنوعی',
+        siteName: 'دستیار هوش مصنوعی',
+        description: 'چت با مدل‌های پیشرفته هوش مصنوعی',
         type: 'website',
-        locale: 'en_US',
-        images: [
-            {
-                url: 'https://llmchat.co/og-image.jpg',
-                width: 1200,
-                height: 630,
-                alt: 'LLMChat Preview',
-            },
-        ],
-    },
-    twitter: {
-        card: 'summary_large_image',
-        title: 'llmchat.co - Go Deeper with AI-Powered Research & Agentic Workflows',
-        site: 'llmchat.co',
-        creator: '@llmchat_co',
-        description:
-            'Experience deep, AI-powered research with agentic workflows and a wide variety of models for advanced productivity.',
-        images: ['https://llmchat.co/twitter-image.jpg'],
+        locale: 'fa_IR',
     },
     robots: {
         index: true,
@@ -60,9 +31,6 @@ export const metadata: Metadata = {
             'max-snippet': -1,
         },
     },
-    alternates: {
-        canonical: 'https://llmchat.co',
-    },
 };
 
 export const viewport: Viewport = {
@@ -72,14 +40,20 @@ export const viewport: Viewport = {
     userScalable: false,
 };
 
-const inter = localFont({
-    src: './InterVariable.woff2',
-    variable: '--font-inter',
-});
-
-const clash = localFont({
-    src: './ClashGrotesk-Variable.woff2',
-    variable: '--font-clash',
+const iranYekan = localFont({
+    src: [
+        { path: './fonts/IRANYekanXFaNum-Thin.woff2', weight: '100' },
+        { path: './fonts/IRANYekanXFaNum-UltraLight.woff2', weight: '200' },
+        { path: './fonts/IRANYekanXFaNum-Light.woff2', weight: '300' },
+        { path: './fonts/IRANYekanXFaNum-Regular.woff2', weight: '400' },
+        { path: './fonts/IRANYekanXFaNum-Medium.woff2', weight: '500' },
+        { path: './fonts/IRANYekanXFaNum-DemiBold.woff2', weight: '600' },
+        { path: './fonts/IRANYekanXFaNum-Bold.woff2', weight: '700' },
+        { path: './fonts/IRANYekanXFaNum-ExtraBold.woff2', weight: '800' },
+        { path: './fonts/IRANYekanXFaNum-Black.woff2', weight: '900' },
+    ],
+    variable: '--font-iran-yekan',
+    display: 'swap',
 });
 
 export default function ParentLayout({
@@ -89,8 +63,9 @@ export default function ParentLayout({
 }>) {
     return (
         <html
-            lang="en"
-            className={cn(GeistMono.variable, inter.variable, clash.variable, bricolage.variable)}
+            lang="fa"
+            dir="rtl"
+            className={cn(GeistMono.variable, iranYekan.variable)}
             suppressHydrationWarning
         >
             <head>

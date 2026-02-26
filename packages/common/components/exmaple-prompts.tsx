@@ -11,38 +11,38 @@ import { Editor } from '@tiptap/react';
 
 export const examplePrompts = {
     howTo: [
-        'How to plan a sustainable vegetable garden for small spaces?',
-        'How to prepare for your first international travel experience?',
-        'How to set up a personal budget that actually works?',
-        'How to improve your public speaking skills for professional settings?',
+        'چطور یک باغچه سبزیجات پایدار برای فضاهای کوچک طراحی کنیم؟',
+        'چطور برای اولین سفر بین‌المللی آماده شویم؟',
+        'چطور یک بودجه شخصی واقعاً کارآمد تنظیم کنیم؟',
+        'چطور مهارت سخنرانی عمومی را برای محیط‌های حرفه‌ای بهبود دهیم؟',
     ],
 
     explainConcepts: [
-        'Explain how blockchain technology works in simple terms.',
-        'What is quantum computing and how does it differ from traditional computing?',
-        'Explain the concept of emotional intelligence and its importance.',
-        'How does carbon capture technology work to combat climate change?',
+        'بلاکچین را با زبان ساده توضیح بده.',
+        'محاسبات کوانتومی چیست و چه تفاوتی با محاسبات سنتی دارد؟',
+        'هوش هیجانی را توضیح بده و اهمیت آن را بیان کن.',
+        'فناوری جذب کربن چگونه با تغییرات اقلیمی مبارزه می‌کند؟',
     ],
 
     creative: [
-        "Write a short story about a chance encounter that changes someone's life.",
-        'Create a recipe for a fusion dish combining Italian and Japanese cuisines.',
-        'Design a fictional sustainable city of the future.',
-        'Develop a character profile for the protagonist of a science fiction novel.',
+        'یک داستان کوتاه درباره یک ملاقات تصادفی که زندگی کسی را تغییر می‌دهد بنویس.',
+        'یک دستور پخت ترکیبی از غذاهای ایتالیایی و ژاپنی بساز.',
+        'یک شهر پایدار خیالی از آینده طراحی کن.',
+        'پروفایل شخصیت اصلی یک رمان علمی‌تخیلی را توسعه بده.',
     ],
 
     advice: [
-        "What's the best approach to negotiate a salary increase?",
-        'How should I prepare for a marathon as a beginner runner?',
-        'What strategies can help manage work-life balance when working remotely?',
-        'What should I consider when adopting a pet for the first time?',
+        'بهترین روش برای مذاکره افزایش حقوق چیست؟',
+        'به عنوان یک دونده مبتدی، چطور برای ماراتن آماده شوم؟',
+        'چه استراتژی‌هایی به مدیریت تعادل کار و زندگی در دورکاری کمک می‌کند؟',
+        'هنگام نگهداری حیوان خانگی برای اولین بار، چه مواردی را باید در نظر بگیرم؟',
     ],
 
     analysis: [
-        'Analyze the potential impact of artificial intelligence on healthcare.',
-        'Compare different approaches to addressing climate change.',
-        'Examine the pros and cons of various renewable energy sources.',
-        'Analyze how social media has transformed communication in the past decade.',
+        'تأثیر بالقوه هوش مصنوعی بر بهداشت و درمان را تحلیل کن.',
+        'رویکردهای مختلف برای مقابله با تغییرات اقلیمی را مقایسه کن.',
+        'مزایا و معایب منابع مختلف انرژی تجدیدپذیر را بررسی کن.',
+        'تأثیر شبکه‌های اجتماعی بر ارتباطات در دهه گذشته را تحلیل کن.',
     ],
 };
 
@@ -61,11 +61,11 @@ export const getRandomPrompt = (category?: keyof typeof examplePrompts) => {
 
 // Map of category to icon component
 const categoryIcons = {
-    howTo: { name: 'How to', icon: IconQuestionMark, color: '!text-yellow-700' },
-    explainConcepts: { name: 'Explain Concepts', icon: IconBulb, color: '!text-blue-700' },
-    creative: { name: 'Creative', icon: IconPencil, color: '!text-green-700' },
-    advice: { name: 'Advice', icon: IconBook, color: '!text-purple-700' },
-    analysis: { name: 'Analysis', icon: IconChartBar, color: '!text-red-700' },
+    howTo: { name: 'چطور', icon: IconQuestionMark, color: '!text-yellow-700' },
+    explainConcepts: { name: 'توضیح مفاهیم', icon: IconBulb, color: '!text-blue-700' },
+    creative: { name: 'خلاقانه', icon: IconPencil, color: '!text-green-700' },
+    advice: { name: 'مشاوره', icon: IconBook, color: '!text-purple-700' },
+    analysis: { name: 'تحلیل', icon: IconChartBar, color: '!text-red-700' },
 };
 
 export const ExamplePrompts = () => {

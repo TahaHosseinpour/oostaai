@@ -2,6 +2,7 @@ import { IconPlus } from '@tabler/icons-react';
 
 import { useMcpToolsStore } from '@repo/common/store';
 import { Button } from '@repo/ui/src/components/button';
+import { useRouter } from 'next/navigation';
 
 import {
     Badge,
@@ -15,7 +16,6 @@ import {
 import { IconCheck, IconTools } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { useApiKeysStore } from '../store/api-keys.store';
-import { SETTING_TABS, useAppStore } from '../store/app.store';
 import { useChatStore } from '../store/chat.store';
 import { ToolIcon } from './icons';
 
@@ -25,8 +25,7 @@ export const ToolsMenu = () => {
     const apiKeys = useApiKeysStore();
     const chatMode = useChatStore(state => state.chatMode);
     const hasApiKeyForChatMode = useApiKeysStore(state => state.hasApiKeyForChatMode);
-    const setIsSettingsOpen = useAppStore(state => state.setIsSettingsOpen);
-    const setSettingTab = useAppStore(state => state.setSettingTab);
+    const router = useRouter();
     const isToolsAvailable = useMemo(
         () => hasApiKeyForChatMode(chatMode),
         [chatMode, hasApiKeyForChatMode, apiKeys]
@@ -42,7 +41,7 @@ export const ToolsMenu = () => {
                 <DropdownMenuTrigger asChild>
                     <Button
                         size={selectedMCP.length > 0 ? 'sm' : 'icon'}
-                        tooltip={isToolsAvailable ? 'Tools' : 'Only available with BYOK'}
+                        tooltip={isToolsAvailable ? 'ابزارها' : 'فقط با کلید API شخصی در دسترس است'}
                         variant={isOpen ? 'secondary' : 'ghost'}
                         className="gap-2"
                         rounded="full"
@@ -89,14 +88,13 @@ export const ToolsMenu = () => {
                                 strokeWidth={2}
                                 className="text-muted-foreground"
                             />
-                            <p className="text-muted-foreground text-sm">No tools found</p>
+                            <p className="text-muted-foreground text-sm">ابزاری یافت نشد</p>
                             <Button
                                 rounded="full"
                                 variant="bordered"
                                 className="text-muted-foreground text-xs"
                                 onClick={() => {
-                                    setIsSettingsOpen(true);
-                                    setSettingTab(SETTING_TABS.MCP_TOOLS);
+                                    router.push('/settings');
                                 }}
                             >
                                 <IconPlus
@@ -104,7 +102,7 @@ export const ToolsMenu = () => {
                                     strokeWidth={2}
                                     className="text-muted-foreground"
                                 />
-                                Add Tool
+                                افزودن ابزار
                             </Button>
                         </div>
                     )}
@@ -112,12 +110,11 @@ export const ToolsMenu = () => {
                     {mcpConfig && Object.keys(mcpConfig).length > 0 && (
                         <DropdownMenuItem
                             onClick={() => {
-                                setIsSettingsOpen(true);
-                                setSettingTab(SETTING_TABS.MCP_TOOLS);
+                                router.push('/settings');
                             }}
                         >
                             <IconPlus size={14} strokeWidth={2} className="text-muted-foreground" />
-                            Add Tool
+                            افزودن ابزار
                         </DropdownMenuItem>
                     )}
                 </DropdownMenuContent>

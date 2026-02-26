@@ -4,23 +4,23 @@ export const Footer = () => {
     const links = [
         {
             href: 'https://git.new/llmchat',
-            label: 'Star us on GitHub',
+            label: 'ما را در GitHub ستاره دار کنید',
         },
         {
             href: 'https://github.com',
-            label: 'Changelog',
+            label: 'تغییرات',
         },
         {
             href: '',
-            label: 'Feedback',
+            label: 'بازخورد',
         },
         {
             href: '/terms',
-            label: 'Terms',
+            label: 'شرایط',
         },
         {
             href: '/privacy',
-            label: 'Privacy',
+            label: 'حریم خصوصی',
         },
     ];
     return (

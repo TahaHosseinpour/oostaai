@@ -1,14 +1,14 @@
 import { useUser } from '@clerk/nextjs';
-import { useApiKeysStore, useAppStore, useChatStore } from '@repo/common/store';
+import { useApiKeysStore, useChatStore } from '@repo/common/store';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 export function MessagesRemainingBadge() {
     const { user } = useUser();
     const chatMode = useChatStore(state => state.chatMode);
     const hasApiKeys = useApiKeysStore(state => state.hasApiKeyForChatMode(chatMode));
     const creditLimit = useChatStore(state => state.creditLimit);
-    const setIsSettingsOpen = useAppStore(state => state.setIsSettingsOpen);
-    const setSettingTab = useAppStore(state => state.setSettingTab);
+    const router = useRouter();
 
     if (
         !creditLimit.isFetched ||
@@ -30,18 +30,17 @@ export function MessagesRemainingBadge() {
             >
                 <div className="text-muted-foreground/50 text-xs">
                     {creditLimit.remaining === 0
-                        ? 'You have no credits left today.'
-                        : `You have ${creditLimit.remaining} credits left today.`}{' '}
-                    For continuous use,
+                        ? 'امروز اعتباری ندارید.'
+                        : `امروز ${creditLimit.remaining} اعتبار دارید.`}{' '}
+                    برای استفاده مداوم،
                     <span
                         className="inline-flex shrink-0 cursor-pointer flex-row items-center gap-1 pl-1 font-medium "
                         onClick={() => {
-                            setIsSettingsOpen(true);
-                            setSettingTab('api-keys');
+                            router.push('/settings');
                         }}
                     >
                         <span className="text-muted-foreground inline-flex flex-row items-center gap-1 px-1 underline underline-offset-2">
-                            Add your own API key
+                            کلید API خود را اضافه کنید
                         </span>
                     </span>
                 </div>

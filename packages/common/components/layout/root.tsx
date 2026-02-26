@@ -11,12 +11,11 @@ import { AgentProvider } from '@repo/common/hooks';
 import { useAppStore } from '@repo/common/store';
 import { plausible } from '@repo/shared/utils';
 import { Badge, Button, Flex, Toaster } from '@repo/ui';
-import { IconMoodSadDizzy, IconX } from '@tabler/icons-react';
+import { IconMenu2, IconX } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { FC, useEffect } from 'react';
 import { useStickToBottom } from 'use-stick-to-bottom';
-import { Drawer } from 'vaul';
 
 export type TRootLayout = {
     children: React.ReactNode;
@@ -24,7 +23,6 @@ export type TRootLayout = {
 
 export const RootLayout: FC<TRootLayout> = ({ children }) => {
     const { isSidebarOpen, isMobileSidebarOpen, setIsMobileSidebarOpen } = useRootContext();
-    const setIsSettingOpen = useAppStore(state => state.setIsSettingsOpen);
 
     const containerClass =
         'relative flex flex-1 flex-row h-[calc(99dvh)] border border-border rounded-sm bg-secondary w-full overflow-hidden shadow-sm';
@@ -35,45 +33,55 @@ export const RootLayout: FC<TRootLayout> = ({ children }) => {
 
     return (
         <div className="bg-tertiary flex h-[100dvh] w-full flex-row overflow-hidden">
-            <div className="bg-tertiary item-center fixed inset-0 z-[99999] flex justify-center md:hidden">
-                <div className="flex flex-col items-center justify-center gap-2">
-                    <IconMoodSadDizzy size={24} strokeWidth={2} className="text-muted-foreground" />
-                    <span className="text-muted-foreground text-center text-sm">
-                        Mobile version is coming soon.
-                        <br /> Please use a desktop browser.
-                    </span>
-                </div>
-            </div>
+            {/* Mobile menu button */}
+            <Button
+                className="fixed right-3 top-3 z-40 lg:hidden"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setIsMobileSidebarOpen(true)}
+            >
+                <IconMenu2 size={20} strokeWidth={2} />
+            </Button>
+
+            {/* Desktop sidebar */}
             <Flex className="hidden lg:flex">
                 <AnimatePresence>{isSidebarOpen && <Sidebar />}</AnimatePresence>
             </Flex>
 
-            <Drawer.Root
-                open={isMobileSidebarOpen}
-                direction="left"
-                shouldScaleBackground
-                onOpenChange={setIsMobileSidebarOpen}
-            >
-                <Drawer.Portal>
-                    <Drawer.Overlay className="fixed inset-0 z-30 backdrop-blur-sm" />
-                    <Drawer.Content className="fixed bottom-0 left-0 top-0 z-[50]">
-                        <Flex className="pr-2">
+            {/* Mobile sidebar overlay */}
+            <AnimatePresence>
+                {isMobileSidebarOpen && (
+                    <>
+                        <motion.div
+                            key="mobile-overlay"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-30 bg-black/30 backdrop-blur-sm lg:hidden"
+                            onClick={() => setIsMobileSidebarOpen(false)}
+                        />
+                        <motion.div
+                            key="mobile-sidebar"
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                            className="fixed bottom-0 right-0 top-0 z-40 lg:hidden"
+                        >
                             <Sidebar />
-                        </Flex>
-                    </Drawer.Content>
-                </Drawer.Portal>
-            </Drawer.Root>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             {/* Main Content */}
             <Flex className="flex-1 overflow-hidden">
-                <motion.div className="flex w-full py-1 pr-1">
+                <motion.div className="flex w-full lg:py-1 lg:pr-1">
                     <AgentProvider>
                         <div className={containerClass}>
                             <div className="relative flex h-full w-0 flex-1 flex-row">
                                 <div className="flex w-full flex-col gap-2 overflow-y-auto">
                                     <div className="from-secondary to-secondary/0 via-secondary/70 absolute left-0 right-0 top-0 z-40 flex flex-row items-center justify-center gap-1 bg-gradient-to-b p-2 pb-12"></div>
-                                    {/* Auth Button Header */}
-
                                     {children}
                                 </div>
                             </div>
@@ -83,7 +91,6 @@ export const RootLayout: FC<TRootLayout> = ({ children }) => {
                         </div>
                     </AgentProvider>
                 </motion.div>
-                <SettingsModal />
                 <CommandSearch />
             </Flex>
 
@@ -132,7 +139,7 @@ export const SideDrawer = () => {
                                 variant="secondary"
                                 size="icon-xs"
                                 onClick={() => dismissSideDrawer()}
-                                tooltip="Close"
+                                tooltip="بستن"
                             >
                                 <IconX size={14} strokeWidth={2} />
                             </Button>

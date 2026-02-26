@@ -122,7 +122,8 @@
     }
 
     body {
-        @apply bg-background text-foreground font-sans font-normal;
+        @apply bg-background text-foreground font-normal;
+        font-family: var(--font-iran-yekan), sans-serif;
     }
 
     strong {
@@ -176,7 +177,7 @@ mark.prompt-highlight {
 .tiptap .is-editor-empty:first-child::before {
     color: hsl(var(--muted-foreground) / 0.5);
     content: attr(data-placeholder);
-    float: left;
+    float: right;
     height: 0;
     pointer-events: none;
 }
@@ -184,7 +185,7 @@ mark.prompt-highlight {
 .dark .tiptap .is-editor-empty:first-child::before {
     color: hsl(var(--muted-foreground));
     content: attr(data-placeholder);
-    float: left;
+    float: right;
     height: 0;
     pointer-events: none;
 }
@@ -194,12 +195,11 @@ mark.prompt-highlight {
     position: absolute;
     z-index: 0;
     bottom: 0;
-    left: -7px;
-    /* Tailwind doesn't support very specific pixel values like -7px */
+    right: -7px;
     height: 20px;
     width: 20px;
     background: hsl(var(--muted));
-    border-bottom-right-radius: 15px;
+    border-bottom-left-radius: 15px;
 }
 
 .greeting-bubble::after {
@@ -207,9 +207,9 @@ mark.prompt-highlight {
     position: absolute;
     z-index: 1;
     bottom: 0;
-    left: -10px;
+    right: -10px;
     width: 10px;
     height: 20px;
     background: hsl(var(--background));
-    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
 }
