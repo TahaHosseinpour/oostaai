@@ -18,6 +18,7 @@ import {
     IconArrowUp,
     IconAtom,
     IconChevronDown,
+    IconCircuitDiode,
     IconNorthStar,
     IconPaperclip,
     IconPlayerStopFilled,
@@ -42,6 +43,13 @@ export const chatOptions = [
         value: ChatMode.Pro,
         icon: <IconNorthStar size={16} className="text-muted-foreground" strokeWidth={2} />,
         creditCost: CHAT_MODE_CREDIT_COSTS[ChatMode.Pro],
+    },
+    {
+        label: 'AI Pipeline',
+        description: 'پاسخ‌دهی هوشمند با دیتابیس و RAGFlow',
+        value: ChatMode.AI_Pipeline,
+        icon: <IconCircuitDiode size={16} className="text-muted-foreground" strokeWidth={2} />,
+        creditCost: CHAT_MODE_CREDIT_COSTS[ChatMode.AI_Pipeline],
     },
 ];
 

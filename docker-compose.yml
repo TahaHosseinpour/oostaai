@@ -19,5 +19,36 @@ services:
     ports:
       - '6399:6379'
 
+  redis-rest:
+    image: hiett/serverless-redis-http:latest
+    restart: always
+    ports:
+      - '8079:80'
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: local_dev_token
+      SRH_CONNECTION_STRING: redis://redis:6379
+    depends_on:
+      - redis
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - '8000:8000'
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: llmchat
+      DB_USER: llmchat
+      DB_PASSWORD: llmchat
+    depends_on:
+      - postgres
+    volumes:
+      - ./apps/api:/app
+
 volumes:
   postgres_data:

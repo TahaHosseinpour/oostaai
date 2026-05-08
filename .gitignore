@@ -34,3 +34,13 @@ yarn-error.log*
 # turbo
 .turbo
 
+# typescript
+*.tsbuildinfo
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+

@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
-import { CHAT_MODE_CREDIT_COSTS, ChatModeConfig } from '@repo/shared/config';
+import { CHAT_MODE_CREDIT_COSTS, ChatMode, ChatModeConfig } from '@repo/shared/config';
 import { Geo, geolocation } from '@vercel/functions';
 import { NextRequest } from 'next/server';
 import {
@@ -8,7 +8,7 @@ import {
     deductCredits,
     getRemainingCredits,
 } from './credit-service';
-import { executeStream, sendMessage } from './stream-handlers';
+import { executeDjangoStream, executeStream, sendMessage } from './stream-handlers';
 import { completionRequestSchema, SSE_HEADERS } from './types';
 import { getIp } from './utils';
 
@@ -130,30 +130,39 @@ function createCompletionStream({
             }, 15000);
 
             try {
-                await executeStream({
-                    controller,
-                    encoder,
-                    data,
-                    abortController,
-                    gl,
-                    userId: userId ?? undefined,
-                    onFinish: async () => {
-                        // if (process.env.NODE_ENV === 'development') {
-                        //     return;
-                        // }
-                        const creditCost =
-                            CHAT_MODE_CREDIT_COSTS[
-                                data.mode as keyof typeof CHAT_MODE_CREDIT_COSTS
-                            ];
-                        await deductCredits(
-                            {
-                                userId: userId ?? undefined,
-                                ip: ip ?? undefined,
-                            },
-                            creditCost
-                        );
-                    },
-                });
+                const onFinish = async () => {
+                    const creditCost =
+                        CHAT_MODE_CREDIT_COSTS[
+                            data.mode as keyof typeof CHAT_MODE_CREDIT_COSTS
+                        ];
+                    await deductCredits(
+                        {
+                            userId: userId ?? undefined,
+                            ip: ip ?? undefined,
+                        },
+                        creditCost
+                    );
+                };
+
+                if (data.mode === ChatMode.AI_Pipeline) {
+                    await executeDjangoStream({
+                        controller,
+                        encoder,
+                        data,
+                        abortController,
+                        onFinish,
+                    });
+                } else {
+                    await executeStream({
+                        controller,
+                        encoder,
+                        data,
+                        abortController,
+                        gl,
+                        userId: userId ?? undefined,
+                        onFinish,
+                    });
+                }
             } catch (error) {
                 if (abortController.signal.aborted) {
                     console.log('abortController.signal.aborted');
