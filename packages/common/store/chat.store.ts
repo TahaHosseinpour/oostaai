@@ -3,35 +3,91 @@
 import { Model, models } from '@repo/ai/models';
 import { ChatMode } from '@repo/shared/config';
 import { MessageGroup, Thread, ThreadItem } from '@repo/shared/types';
-import Dexie, { Table } from 'dexie';
 import { nanoid } from 'nanoid';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { useAppStore } from './app.store';
 
-class ThreadDatabase extends Dexie {
-    threads!: Table<Thread>;
-    threadItems!: Table<ThreadItem>;
-
-    constructor() {
-        super('ThreadDatabase');
-        this.version(1).stores({
-            threads: 'id, createdAt, pinned, pinnedAt',
-            threadItems: 'id, threadId, parentId, createdAt',
-        });
-    }
-}
-
-let db: ThreadDatabase;
 let CONFIG_KEY = 'chat-config';
-if (typeof window !== 'undefined') {
-    db = new ThreadDatabase();
-    CONFIG_KEY = 'chat-config';
-}
+
+// ── API layer (PostgreSQL via Next.js route handlers) ────────────────────────
+
+const reviveThread = (t: any): Thread => ({
+    ...t,
+    createdAt: new Date(t.createdAt),
+    updatedAt: new Date(t.updatedAt),
+    pinnedAt: t.pinnedAt ? new Date(t.pinnedAt) : new Date(),
+});
+
+const reviveItem = (i: any): ThreadItem => ({
+    ...i,
+    createdAt: new Date(i.createdAt),
+    updatedAt: new Date(i.updatedAt),
+});
+
+const api = {
+    listThreads: async (): Promise<Thread[]> => {
+        const res = await fetch('/api/threads');
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.map(reviveThread);
+    },
+    getThread: async (id: string): Promise<Thread | null> => {
+        const res = await fetch(`/api/threads/${id}`);
+        if (!res.ok) return null;
+        return reviveThread(await res.json());
+    },
+    createThread: async (thread: Thread): Promise<void> => {
+        await fetch('/api/threads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(thread),
+        });
+    },
+    updateThread: async (id: string, patch: Record<string, unknown>): Promise<void> => {
+        await fetch(`/api/threads/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(patch),
+        });
+    },
+    deleteThread: async (id: string): Promise<void> => {
+        await fetch(`/api/threads/${id}`, { method: 'DELETE' });
+    },
+    clearThreads: async (): Promise<void> => {
+        await fetch('/api/threads', { method: 'DELETE' });
+    },
+    listItems: async (threadId: string): Promise<ThreadItem[]> => {
+        const res = await fetch(`/api/threads/${threadId}/items`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.map(reviveItem);
+    },
+    upsertItem: async (threadId: string, item: ThreadItem): Promise<void> => {
+        await fetch(`/api/threads/${threadId}/items`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item),
+        });
+    },
+    deleteItem: async (threadId: string, itemId: string): Promise<{ remaining: number }> => {
+        const res = await fetch(`/api/threads/${threadId}/items/${itemId}`, {
+            method: 'DELETE',
+        });
+        if (!res.ok) return { remaining: -1 };
+        return res.json();
+    },
+    deleteFollowups: async (threadId: string, afterIso: string): Promise<void> => {
+        await fetch(
+            `/api/threads/${threadId}/items?after=${encodeURIComponent(afterIso)}`,
+            { method: 'DELETE' }
+        );
+    },
+};
 
 const loadInitialData = async () => {
-    const threads = await db.threads.toArray();
-    const configStr = localStorage.getItem(CONFIG_KEY);
+    const configStr =
+        typeof window !== 'undefined' ? localStorage.getItem(CONFIG_KEY) : null;
     const config = configStr
         ? JSON.parse(configStr)
         : {
@@ -45,10 +101,13 @@ const loadInitialData = async () => {
     const useWebSearch = typeof config.useWebSearch === 'boolean' ? config.useWebSearch : false;
     const customInstructions = config.customInstructions || '';
 
+    const threads = await api.listThreads();
     const initialThreads = threads.length ? threads : [];
 
     return {
-        threads: initialThreads.sort((a, b) => b.createdAt?.getTime() - a.createdAt?.getTime()),
+        threads: initialThreads.sort(
+            (a, b) => b.createdAt?.getTime() - a.createdAt?.getTime()
+        ),
         currentThreadId: config.currentThreadId || initialThreads[0]?.id,
         config,
         useWebSearch,
@@ -124,52 +183,12 @@ type Actions = {
     setShowSuggestions: (showSuggestions: boolean) => void;
 };
 
-// Add these utility functions at the top level
-const debounce = <T extends (...args: any[]) => any>(
-    fn: T,
-    delay: number
-): ((...args: Parameters<T>) => void) => {
-    let timeoutId: NodeJS.Timeout;
-    return (...args: Parameters<T>) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => fn(...args), delay);
-    };
-};
+// ── Batched persistence for streaming updates ────────────────────────────────
 
-const throttle = <T extends (...args: any[]) => any>(
-    fn: T,
-    limit: number
-): ((...args: Parameters<T>) => void) => {
-    let inThrottle = false;
-    let lastArgs: Parameters<T> | null = null;
+const BATCH_PROCESS_INTERVAL = 500; // flush queued item writes every 500ms
 
-    return (...args: Parameters<T>) => {
-        if (!inThrottle) {
-            fn(...args);
-            inThrottle = true;
-            setTimeout(() => {
-                inThrottle = false;
-                if (lastArgs) {
-                    fn(...lastArgs);
-                    lastArgs = null;
-                }
-            }, limit);
-        } else {
-            lastArgs = args;
-        }
-    };
-};
-
-// Add batch update functionality
-const DB_UPDATE_THROTTLE = 1000; // 1 second between updates for the same item
-const BATCH_PROCESS_INTERVAL = 500; // Process batches every 500ms
-
-// Track the last time each item was updated
-const lastItemUpdateTime: Record<string, number> = {};
-
-// Enhanced batch update queue
 type BatchUpdateQueue = {
-    items: Map<string, ThreadItem>; // Use Map to ensure uniqueness by ID
+    items: Map<string, ThreadItem>;
     timeoutId: NodeJS.Timeout | null;
 };
 
@@ -178,39 +197,24 @@ const batchUpdateQueue: BatchUpdateQueue = {
     timeoutId: null,
 };
 
-// Process all queued updates as a batch
 const processBatchUpdate = async () => {
     if (batchUpdateQueue.items.size === 0) return;
 
     const itemsToUpdate = Array.from(batchUpdateQueue.items.values());
     batchUpdateQueue.items.clear();
 
-    try {
-        await db.threadItems.bulkPut(itemsToUpdate);
-        // Update last update times for all processed items
-        itemsToUpdate.forEach(item => {
-            lastItemUpdateTime[item.id] = Date.now();
-        });
-    } catch (error) {
-        console.error('Failed to batch update thread items:', error);
-        // If bulk update fails, try individual updates to salvage what we can
-        for (const item of itemsToUpdate) {
-            try {
-                await db.threadItems.put(item);
-                lastItemUpdateTime[item.id] = Date.now();
-            } catch (innerError) {
-                console.error(`Failed to update item ${item.id}:`, innerError);
-            }
-        }
-    }
+    await Promise.all(
+        itemsToUpdate.map(item =>
+            api
+                .upsertItem(item.threadId, item)
+                .catch(err => console.error(`Failed to persist item ${item.id}:`, err))
+        )
+    );
 };
 
-// Queue an item for batch update
 const queueThreadItemForUpdate = (threadItem: ThreadItem) => {
-    // Always update the in-memory Map with the latest version
     batchUpdateQueue.items.set(threadItem.id, threadItem);
 
-    // Schedule batch processing if not already scheduled
     if (!batchUpdateQueue.timeoutId) {
         batchUpdateQueue.timeoutId = setTimeout(() => {
             processBatchUpdate();
@@ -218,219 +222,6 @@ const queueThreadItemForUpdate = (threadItem: ThreadItem) => {
         }, BATCH_PROCESS_INTERVAL);
     }
 };
-
-// Add this near the top of your file after other imports
-let dbWorker: SharedWorker | null = null;
-
-// Extend Window interface to include notifyTabSync
-declare global {
-    interface Window {
-        notifyTabSync?: (type: string, data: any) => void;
-    }
-}
-
-// Function to initialize the shared worker
-const initializeWorker = () => {
-    if (typeof window === 'undefined') return;
-
-    try {
-        // Create a shared worker
-        dbWorker = new SharedWorker(new URL('./db-sync.worker.ts', import.meta?.url), {
-            type: 'module',
-        });
-
-        // Set up message handler
-        dbWorker.port.onmessage = async event => {
-            const message = event.data;
-
-            if (!message || !message.type) return;
-
-            // Handle different message types
-            switch (message.type) {
-                case 'connected':
-                    console.log('Connected to SharedWorker');
-                    break;
-
-                case 'thread-update':
-                    // Refresh threads list
-                    const threads = await db.threads.toArray();
-                    useChatStore.setState({
-                        threads: threads.sort(
-                            (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-                        ),
-                    });
-                    break;
-
-                case 'thread-item-update':
-                    // Refresh thread items if we're on the same thread
-                    const currentThreadId = useChatStore.getState().currentThreadId;
-                    if (message.data?.threadId === currentThreadId) {
-                        await useChatStore.getState().loadThreadItems(message.data.threadId);
-                    }
-                    break;
-
-                case 'thread-delete':
-                    // Handle thread deletion
-                    useChatStore.setState(state => {
-                        const newState = { ...state };
-                        newState.threads = state.threads.filter(
-                            t => t.id !== message.data.threadId
-                        );
-
-                        // Update current thread if the deleted one was active
-                        if (state.currentThreadId === message.data.threadId) {
-                            newState.currentThreadId = newState.threads[0]?.id || null;
-                            newState.currentThread = newState.threads[0] || null;
-                        }
-
-                        return newState;
-                    });
-                    break;
-
-                case 'thread-item-delete':
-                    // Handle thread item deletion
-                    if (message.data?.threadId === useChatStore.getState().currentThreadId) {
-                        useChatStore.setState(state => ({
-                            threadItems: state.threadItems.filter(
-                                item => item.id !== message.data.id
-                            ),
-                        }));
-                    }
-                    break;
-            }
-        };
-
-        // Start the connection
-        dbWorker.port.start();
-
-        // Handle worker errors
-        dbWorker.onerror = err => {
-            console.error('SharedWorker error:', err);
-        };
-    } catch (error) {
-        console.error('Failed to initialize SharedWorker:', error);
-        // Fallback to localStorage method if SharedWorker isn't supported
-        initializeTabSync();
-    }
-};
-
-// Function to initialize tab synchronization using localStorage
-const initializeTabSync = () => {
-    if (typeof window === 'undefined') return;
-
-    const SYNC_EVENT_KEY = 'chat-store-sync-event';
-    const SYNC_DATA_KEY = 'chat-store-sync-data';
-
-    // Listen for storage events from other tabs
-    window.addEventListener('storage', event => {
-        if (event.key !== SYNC_EVENT_KEY) return;
-
-        try {
-            const syncData = JSON.parse(localStorage.getItem(SYNC_DATA_KEY) || '{}');
-
-            if (!syncData || !syncData.type) return;
-
-            switch (syncData.type) {
-                case 'thread-update':
-                    // Refresh threads list
-                    db.threads.toArray().then(threads => {
-                        useChatStore.setState({
-                            threads: threads.sort(
-                                (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-                            ),
-                        });
-                    });
-                    break;
-
-                case 'thread-item-update':
-                    // Refresh thread items if we're on the same thread
-                    const currentThreadId = useChatStore.getState().currentThreadId;
-                    if (syncData.data?.threadId === currentThreadId) {
-                        useChatStore.getState().loadThreadItems(syncData.data.threadId);
-                    }
-                    break;
-
-                case 'thread-delete':
-                    // Handle thread deletion
-                    useChatStore.setState(state => {
-                        const newState = { ...state };
-                        newState.threads = state.threads.filter(
-                            t => t.id !== syncData.data.threadId
-                        );
-
-                        // Update current thread if the deleted one was active
-                        if (state.currentThreadId === syncData.data.threadId) {
-                            newState.currentThreadId = newState.threads[0]?.id || null;
-                            newState.currentThread = newState.threads[0] || null;
-                        }
-
-                        return newState;
-                    });
-                    break;
-
-                case 'thread-item-delete':
-                    // Handle thread item deletion
-                    if (syncData.data?.threadId === useChatStore.getState().currentThreadId) {
-                        useChatStore.setState(state => ({
-                            threadItems: state.threadItems.filter(
-                                item => item.id !== syncData.data.id
-                            ),
-                        }));
-                    }
-                    break;
-            }
-        } catch (error) {
-            console.error('Error processing sync data:', error);
-        }
-    });
-
-    // Function to notify other tabs about a change
-    const notifyOtherTabs = (type: string, data: any) => {
-        try {
-            // Store the sync data
-            localStorage.setItem(
-                SYNC_DATA_KEY,
-                JSON.stringify({
-                    type,
-                    data,
-                    timestamp: Date.now(),
-                })
-            );
-
-            // Trigger the storage event in other tabs
-            localStorage.setItem(SYNC_EVENT_KEY, Date.now().toString());
-        } catch (error) {
-            console.error('Error notifying other tabs:', error);
-        }
-    };
-
-    // Replace the worker notification with localStorage notification
-    window.notifyTabSync = notifyOtherTabs;
-};
-
-// Function to notify the worker about a change
-const notifyWorker = (type: string, data: any) => {
-    if (!dbWorker) {
-        // Use localStorage fallback if worker isn't available
-        if (typeof window !== 'undefined' && window.notifyTabSync) {
-            window.notifyTabSync(type, data);
-        }
-        return;
-    }
-
-    try {
-        dbWorker.port.postMessage({
-            type,
-            data,
-            timestamp: Date.now(),
-        });
-    } catch (error) {
-        console.error('Error notifying worker:', error);
-    }
-};
-
-// Create a debounced version of the notification function
-const debouncedNotify = debounce(notifyWorker, 300);
 
 export const useChatStore = create(
     immer<State & Actions>((set, get) => ({
@@ -492,7 +283,11 @@ export const useChatStore = create(
         },
 
         setShowSuggestions: (showSuggestions: boolean) => {
-            localStorage.setItem(CONFIG_KEY, JSON.stringify({ showSuggestions }));
+            const existingConfig = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+            localStorage.setItem(
+                CONFIG_KEY,
+                JSON.stringify({ ...existingConfig, showSuggestions })
+            );
             set(state => {
                 state.showSuggestions = showSuggestions;
             });
@@ -507,14 +302,15 @@ export const useChatStore = create(
         },
 
         setChatMode: (chatMode: ChatMode) => {
-            localStorage.setItem(CONFIG_KEY, JSON.stringify({ chatMode }));
+            const existingConfig = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+            localStorage.setItem(CONFIG_KEY, JSON.stringify({ ...existingConfig, chatMode }));
             set(state => {
                 state.chatMode = chatMode;
             });
         },
 
         pinThread: async (threadId: string) => {
-            await db.threads.update(threadId, { pinned: true, pinnedAt: new Date() });
+            await api.updateThread(threadId, { pinned: true });
             set(state => {
                 state.threads = state.threads.map(thread =>
                     thread.id === threadId
@@ -525,7 +321,7 @@ export const useChatStore = create(
         },
 
         unpinThread: async (threadId: string) => {
-            await db.threads.update(threadId, { pinned: false, pinnedAt: new Date() });
+            await api.updateThread(threadId, { pinned: false });
             set(state => {
                 state.threads = state.threads.map(thread =>
                     thread.id === threadId
@@ -553,38 +349,31 @@ export const useChatStore = create(
         },
 
         getPinnedThreads: async () => {
-            const threads = await db.threads.where('pinned').equals('true').toArray();
-            return threads.sort((a, b) => b.pinnedAt.getTime() - a.pinnedAt.getTime());
+            return get()
+                .threads.filter(t => t.pinned)
+                .sort((a, b) => b.pinnedAt.getTime() - a.pinnedAt.getTime());
         },
 
         removeFollowupThreadItems: async (threadItemId: string) => {
-            const threadItem = await db.threadItems.get(threadItemId);
+            const threadItem = get().threadItems.find(t => t.id === threadItemId);
             if (!threadItem) return;
-            const threadItems = await db.threadItems
-                .where('createdAt')
-                .above(threadItem.createdAt)
-                .and(item => item.threadId === threadItem.threadId)
-                .toArray();
-            for (const threadItem of threadItems) {
-                await db.threadItems.delete(threadItem.id);
-            }
+
+            await api.deleteFollowups(
+                threadItem.threadId,
+                new Date(threadItem.createdAt).toISOString()
+            );
+
             set(state => {
                 state.threadItems = state.threadItems.filter(
-                    t => t.createdAt <= threadItem.createdAt || t.threadId !== threadItem.threadId
+                    t =>
+                        t.createdAt <= threadItem.createdAt ||
+                        t.threadId !== threadItem.threadId
                 );
-            });
-
-            // Notify other tabs
-            debouncedNotify('thread-item-delete', {
-                threadId: threadItem.threadId,
-                id: threadItemId,
-                isFollowupRemoval: true,
             });
         },
 
         getThreadItems: async (threadId: string) => {
-            const threadItems = await db.threadItems.where('threadId').equals(threadId).toArray();
-            return threadItems;
+            return api.listItems(threadId);
         },
 
         setCurrentSources: (sources: string[]) => {
@@ -628,29 +417,31 @@ export const useChatStore = create(
             }),
 
         loadThreadItems: async (threadId: string) => {
-            const threadItems = await db.threadItems.where('threadId').equals(threadId).toArray();
+            const threadItems = await api.listItems(threadId);
             set(state => {
                 state.threadItems = threadItems;
             });
         },
 
         clearAllThreads: async () => {
-            await db.threads.clear();
-            await db.threadItems.clear();
+            await api.clearThreads();
             set(state => {
                 state.threads = [];
                 state.threadItems = [];
+                state.currentThreadId = null;
+                state.currentThread = null;
             });
         },
 
         getThread: async (threadId: string) => {
-            const thread = await db.threads.get(threadId);
-            return thread || null;
+            const local = get().threads.find(t => t.id === threadId);
+            if (local) return local;
+            return api.getThread(threadId);
         },
 
         createThread: async (optimisticId: string, thread?: Pick<Thread, 'title'>) => {
             const threadId = optimisticId || nanoid();
-            const newThread = {
+            const newThread: Thread = {
                 id: threadId,
                 title: thread?.title || 'New Thread',
                 updatedAt: new Date(),
@@ -658,21 +449,22 @@ export const useChatStore = create(
                 pinned: false,
                 pinnedAt: new Date(),
             };
-            db.threads.add(newThread);
             set(state => {
                 state.threads.push(newThread);
                 state.currentThreadId = newThread.id;
                 state.currentThread = newThread;
             });
 
-            // Notify other tabs through the worker
-            debouncedNotify('thread-update', { threadId });
-
+            await api.createThread(newThread);
             return newThread;
         },
 
         setModel: async (model: Model) => {
-            localStorage.setItem(CONFIG_KEY, JSON.stringify({ model: model.id }));
+            const existingConfig = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+            localStorage.setItem(
+                CONFIG_KEY,
+                JSON.stringify({ ...existingConfig, model: model.id })
+            );
             set(state => {
                 state.model = model;
             });
@@ -699,12 +491,9 @@ export const useChatStore = create(
             });
 
             try {
-                await db.threads.put(updatedThread);
-
-                // Notify other tabs about the update
-                debouncedNotify('thread-update', { threadId: thread.id });
+                await api.updateThread(thread.id, { title: updatedThread.title });
             } catch (error) {
-                console.error('Failed to update thread in database:', error);
+                console.error('Failed to update thread:', error);
             }
         },
 
@@ -712,7 +501,6 @@ export const useChatStore = create(
             const threadId = get().currentThreadId;
             if (!threadId) return;
             try {
-                db.threadItems.put(threadItem);
                 set(state => {
                     if (state.threadItems.find(t => t.id === threadItem.id)) {
                         state.threadItems = state.threadItems.map(t =>
@@ -723,14 +511,9 @@ export const useChatStore = create(
                     }
                 });
 
-                // Notify other tabs
-                debouncedNotify('thread-item-update', {
-                    threadId,
-                    id: threadItem.id,
-                });
+                await api.upsertItem(threadId, { ...threadItem, threadId });
             } catch (error) {
                 console.error('Failed to create thread item:', error);
-                // Handle error appropriately
             }
         },
 
@@ -739,19 +522,8 @@ export const useChatStore = create(
             if (!threadId) return;
 
             try {
-                console.log('updateThreadItem', threadItem);
-
-                // // Fetch the existing item
-                // let existingItem: ThreadItem | undefined;
-                // try {
-                //     db.threadItems.get(threadItem.id);
-                // } catch (error) {
-                //     console.warn(`Couldn't fetch existing item ${threadItem.id}:`, error);
-                // }
-
                 const existingItem = get().threadItems.find(t => t.id === threadItem.id);
 
-                // Create or update the item
                 const updatedItem = existingItem
                     ? { ...existingItem, ...threadItem, threadId, updatedAt: new Date() }
                     : ({
@@ -762,7 +534,6 @@ export const useChatStore = create(
                           ...threadItem,
                       } as ThreadItem);
 
-                // Update UI state immediately
                 set(state => {
                     const index = state.threadItems.findIndex(t => t.id === threadItem.id);
                     if (index !== -1) {
@@ -772,41 +543,10 @@ export const useChatStore = create(
                     }
                 });
 
-                // // Determine if this is a critical update that should bypass throttling
-                // const isCriticalUpdate =
-                //     !existingItem || // New items
-                //     threadItem.status === 'COMPLETED' || // Final updates
-                //     threadItem.status === 'ERROR' || // Error states
-                //     threadItem.status === 'ABORTED' || // Aborted states
-                //     threadItem.error !== undefined; // Any error information
-
-                // // Always persist final updates - this fixes the issue with missing updates at stream completion
-                // if (
-                //     threadItem.persistToDB === true ||
-                //     isCriticalUpdate ||
-                //     timeSinceLastUpdate > DB_UPDATE_THROTTLE
-                // ) {
-                //     // For critical updates or if enough time has passed, queue for immediate update
-                //     queueThreadItemForUpdate(updatedItem);
-
                 queueThreadItemForUpdate(updatedItem);
-
-                // Notify other tabs about the update
-                debouncedNotify('thread-item-update', {
-                    threadId,
-                    id: threadItem.id,
-                });
-
-                // if (isCriticalUpdate) {
-                //     lastItemUpdateTime[threadItem.id] = now;
-                // }
-                // }
-                // Non-critical updates that are too soon after the last update
-                // won't be persisted yet, but will be in the UI state
             } catch (error) {
                 console.error('Error in updateThreadItem:', error);
 
-                // Safety fallback - try to persist directly in case of errors in the main logic
                 try {
                     const fallbackItem = {
                         id: threadItem.id,
@@ -817,8 +557,8 @@ export const useChatStore = create(
                         updatedAt: new Date(),
                         ...threadItem,
                         error: threadItem.error || `Something went wrong`,
-                    };
-                    await db.threadItems.put(fallbackItem);
+                    } as ThreadItem;
+                    await api.upsertItem(threadId, fallbackItem);
                 } catch (fallbackError) {
                     console.error(
                         'Critical: Failed even fallback thread item update:',
@@ -830,12 +570,10 @@ export const useChatStore = create(
 
         switchThread: async (threadId: string) => {
             const thread = get().threads.find(t => t.id === threadId);
+            const existingConfig = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
             localStorage.setItem(
                 CONFIG_KEY,
-                JSON.stringify({
-                    model: get().model.id,
-                    currentThreadId: threadId,
-                })
+                JSON.stringify({ ...existingConfig, currentThreadId: threadId })
             );
             set(state => {
                 state.currentThreadId = threadId;
@@ -848,29 +586,20 @@ export const useChatStore = create(
             const threadId = get().currentThreadId;
             if (!threadId) return;
 
-            await db.threadItems.delete(threadItemId);
+            const { remaining } = await api.deleteItem(threadId, threadItemId);
             set(state => {
                 state.threadItems = state.threadItems.filter(
                     (t: ThreadItem) => t.id !== threadItemId
                 );
             });
 
-            // Notify other tabs
-            debouncedNotify('thread-item-delete', { id: threadItemId, threadId });
-
-            // Check if there are any thread items left for this thread
-            const remainingItems = await db.threadItems.where('threadId').equals(threadId).count();
-
-            // If no items remain, delete the thread and redirect
-            if (remainingItems === 0) {
-                await db.threads.delete(threadId);
+            if (remaining === 0) {
                 set(state => {
                     state.threads = state.threads.filter((t: Thread) => t.id !== threadId);
-                    state.currentThreadId = state.threads[0]?.id;
+                    state.currentThreadId = state.threads[0]?.id ?? null;
                     state.currentThread = state.threads[0] || null;
                 });
 
-                // Redirect to /chat page
                 if (typeof window !== 'undefined') {
                     window.location.href = '/chat';
                 }
@@ -878,16 +607,12 @@ export const useChatStore = create(
         },
 
         deleteThread: async threadId => {
-            await db.threads.delete(threadId);
-            await db.threadItems.where('threadId').equals(threadId).delete();
+            await api.deleteThread(threadId);
             set(state => {
                 state.threads = state.threads.filter((t: Thread) => t.id !== threadId);
-                state.currentThreadId = state.threads[0]?.id;
+                state.currentThreadId = state.threads[0]?.id ?? null;
                 state.currentThread = state.threads[0] || null;
             });
-
-            // Notify other tabs
-            debouncedNotify('thread-delete', { threadId });
         },
 
         getPreviousThreadItems: threadId => {
@@ -925,7 +650,6 @@ export const useChatStore = create(
 );
 
 if (typeof window !== 'undefined') {
-    // Initialize store with data from IndexedDB
     loadInitialData().then(
         ({
             threads,
@@ -944,14 +668,6 @@ if (typeof window !== 'undefined') {
                 showSuggestions,
                 customInstructions,
             });
-
-            // Initialize the shared worker for tab synchronization
-            if ('SharedWorker' in window) {
-                initializeWorker();
-            } else {
-                // Fallback to localStorage method
-                initializeTabSync();
-            }
         }
     );
 }

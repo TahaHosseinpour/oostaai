@@ -1,14 +1,12 @@
-import asyncio
 import logging
 
 from django.conf import settings
-from ragflow_sdk import RAGFlow
+from openai import AsyncOpenAI
 
 logger = logging.getLogger(__name__)
 
 
 def is_available() -> bool:
-    """Return True only if all required RAGFlow settings are present."""
     missing = [
         key for key in ("RAGFLOW_API_KEY", "RAGFLOW_BASE_URL", "RAGFLOW_CHAT_ID")
         if not getattr(settings, key, "")
@@ -19,25 +17,21 @@ def is_available() -> bool:
     return True
 
 
-def _get_client() -> RAGFlow:
-    return RAGFlow(
+def _get_client() -> AsyncOpenAI:
+    base_url = f"{settings.RAGFLOW_BASE_URL.rstrip('/')}/api/v1/openai/{settings.RAGFLOW_CHAT_ID}"
+    return AsyncOpenAI(
         api_key=settings.RAGFLOW_API_KEY,
-        base_url=settings.RAGFLOW_BASE_URL,
+        base_url=base_url,
     )
 
 
-def _ask_sync(question: str) -> str:
-    client = _get_client()
-    chats = client.list_chats(id=settings.RAGFLOW_CHAT_ID)
-    if not chats:
-        return ""
-    assistant = chats[0]
-    session = assistant.create_session()
-    # ask() returns a generator; consume fully to get final answer
-    chunks = list(session.ask(question, stream=False))
-    return str(chunks[-1]) if chunks else ""
-
-
 async def query_ragflow(question: str) -> str:
-    # RAGFlow SDK is synchronous; run it in a thread to avoid blocking the event loop.
-    return await asyncio.to_thread(_ask_sync, question)
+    client = _get_client()
+    response = await client.chat.completions.create(
+        model="model",
+        messages=[{"role": "user", "content": question}],
+        stream=False,
+    )
+    answer = response.choices[0].message.content or ""
+    logger.debug("[ragflow] answer length=%d", len(answer))
+    return answer

@@ -1,9 +1,9 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-export default clerkMiddleware(async (auth, req) => {
+// Auth removed — middleware is a passthrough.
+export default function middleware() {
     return NextResponse.next();
-});
+}
 
 export const config = {
     matcher: [

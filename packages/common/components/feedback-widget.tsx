@@ -1,4 +1,4 @@
-import { useAuth } from '@clerk/nextjs';
+import { useAuth } from '../hooks/auth';
 import { Button, Textarea } from '@repo/ui';
 import { IconCircleCheckFilled, IconHelpSmall, IconX } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';

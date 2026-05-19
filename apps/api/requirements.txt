@@ -18,5 +18,5 @@ duckdb>=1.0
 duckdb-engine>=0.13
 sqlalchemy>=2.0
 
-# RAGFlow SDK
-ragflow-sdk>=0.17
+# OpenAI SDK (also used for RAGFlow OpenAI-compatible API)
+openai>=1.0

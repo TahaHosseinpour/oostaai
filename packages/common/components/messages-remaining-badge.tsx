@@ -1,4 +1,4 @@
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '../hooks/auth';
 import { useApiKeysStore, useChatStore } from '@repo/common/store';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';

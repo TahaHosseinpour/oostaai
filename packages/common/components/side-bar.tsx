@@ -1,5 +1,5 @@
 'use client';
-import { useClerk, useUser } from '@clerk/nextjs';
+import { useClerk, useUser } from '../hooks/auth';
 import { FullPageLoader, HistoryItem, Logo } from '@repo/common/components';
 import { useRootContext } from '@repo/common/context';
 import { useAppStore, useChatStore } from '@repo/common/store';

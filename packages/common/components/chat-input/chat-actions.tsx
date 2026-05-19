@@ -1,5 +1,5 @@
 'use client';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '../../hooks/auth';
 import { DotSpinner } from '@repo/common/components';
 import { useApiKeysStore, useAppStore, useChatStore } from '@repo/common/store';
 import { CHAT_MODE_CREDIT_COSTS, ChatMode, ChatModeConfig } from '@repo/shared/config';

@@ -1,20 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-  // This is your Prisma schema file,
-  // learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider = "prisma-client-js"
+}
 
-  generator client {
-    provider = "prisma-client-js"
-  }
-
-  datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
-  }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
 model Feedback {
-  id String @id @default(uuid())
-  userId String
-  feedback String
-  metadata Json?
+  id        String   @id @default(uuid())
+  userId    String
+  feedback  String
+  metadata  Json?
   createdAt DateTime @default(now())
-} 
+}
+
+model Thread {
+  id        String       @id
+  title     String       @default("New Thread")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @default(now())
+  pinned    Boolean      @default(false)
+  pinnedAt  DateTime     @default(now())
+  projectId String?
+  items     ThreadItem[]
+
+  @@index([createdAt])
+  @@index([pinned])
+}
+
+model ThreadItem {
+  id              String   @id
+  threadId        String
+  parentId        String?
+  query           String   @default("")
+  mode            String
+  status          String?  @default("QUEUED")
+  answer          Json?
+  steps           Json?
+  toolCalls       Json?
+  toolResults     Json?
+  sources         Json?
+  suggestions     Json?
+  object          Json?
+  metadata        Json?
+  error           String?
+  imageAttachment String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([parentId])
+  @@index([createdAt])
+}

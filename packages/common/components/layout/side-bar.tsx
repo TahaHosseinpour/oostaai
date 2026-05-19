@@ -1,4 +1,4 @@
-import { SignInButton, useAuth, UserButton } from '@clerk/nextjs';
+import { SignInButton, useAuth, UserButton } from '../../hooks/auth';
 import { FullPageLoader, HistoryItem } from '@repo/common/components';
 import { useRootContext } from '@repo/common/context';
 import { Thread, useAppStore, useChatStore } from '@repo/common/store';
