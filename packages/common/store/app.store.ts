@@ -20,6 +20,7 @@ type State = {
     isSidebarOpen: boolean;
     isSourcesOpen: boolean;
     isSettingsOpen: boolean;
+    isVoiceMode: boolean;
     showSignInModal: boolean;
     settingTab: (typeof SETTING_TABS)[keyof typeof SETTING_TABS];
     sideDrawer: SideDrawerProps;
@@ -31,6 +32,7 @@ type Actions = {
     setIsSidebarOpen: (prev: (prev: boolean) => boolean) => void;
     setIsSourcesOpen: (prev: (prev: boolean) => boolean) => void;
     setIsSettingsOpen: (open: boolean) => void;
+    setIsVoiceMode: (value: boolean) => void;
     setSettingTab: (tab: (typeof SETTING_TABS)[keyof typeof SETTING_TABS]) => void;
     setShowSignInModal: (show: boolean) => void;
     openSideDrawer: (props: Omit<SideDrawerProps, 'open'>) => void;
@@ -43,6 +45,7 @@ export const useAppStore = create(
         isSidebarOpen: true,
         isSourcesOpen: false,
         isSettingsOpen: false,
+        isVoiceMode: false,
         settingTab: 'api-keys',
         showSignInModal: false,
         setIsSidebarOpen: (prev: (prev: boolean) => boolean) =>
@@ -50,6 +53,7 @@ export const useAppStore = create(
         setIsSourcesOpen: (prev: (prev: boolean) => boolean) =>
             set({ isSourcesOpen: prev(get().isSourcesOpen) }),
         setIsSettingsOpen: (open: boolean) => set({ isSettingsOpen: open }),
+        setIsVoiceMode: (value: boolean) => set({ isVoiceMode: value }),
         setSettingTab: (tab: (typeof SETTING_TABS)[keyof typeof SETTING_TABS]) =>
             set({ settingTab: tab }),
         setShowSignInModal: (show: boolean) => set({ showSignInModal: show }),

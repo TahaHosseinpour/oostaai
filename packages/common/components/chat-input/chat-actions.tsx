@@ -1,7 +1,7 @@
 'use client';
 import { useUser } from '@clerk/nextjs';
 import { DotSpinner } from '@repo/common/components';
-import { useApiKeysStore, useChatStore } from '@repo/common/store';
+import { useApiKeysStore, useAppStore, useChatStore } from '@repo/common/store';
 import { CHAT_MODE_CREDIT_COSTS, ChatMode, ChatModeConfig } from '@repo/shared/config';
 import {
     Button,
@@ -19,6 +19,7 @@ import {
     IconAtom,
     IconChevronDown,
     IconCircuitDiode,
+    IconMicrophone,
     IconNorthStar,
     IconPaperclip,
     IconPlayerStopFilled,
@@ -142,6 +143,27 @@ export const AttachmentButton = () => {
             disabled
         >
             <IconPaperclip size={18} strokeWidth={2} className="text-muted-foreground" />
+        </Button>
+    );
+};
+
+export const MicrophoneButton = () => {
+    const isVoiceMode = useAppStore(state => state.isVoiceMode);
+    const setIsVoiceMode = useAppStore(state => state.setIsVoiceMode);
+
+    return (
+        <Button
+            size="icon-sm"
+            tooltip={isVoiceMode ? 'خروج از حالت صوتی' : 'حالت صوتی'}
+            variant={isVoiceMode ? 'secondary' : 'ghost'}
+            className={cn('gap-2', isVoiceMode && 'bg-indigo-500/10 text-indigo-500')}
+            onClick={() => setIsVoiceMode(!isVoiceMode)}
+        >
+            <IconMicrophone
+                size={16}
+                strokeWidth={2}
+                className={cn(isVoiceMode ? '!text-indigo-500' : 'text-muted-foreground')}
+            />
         </Button>
     );
 };

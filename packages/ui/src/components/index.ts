@@ -19,6 +19,7 @@ export * from './kbd';
 export * from './label-divider';
 export * from './link-block';
 export * from './loading-spinner';
+export * from './orb';
 export * from './popover';
 export * from './radio-group';
 export * from './sheet';

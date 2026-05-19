@@ -15,9 +15,16 @@ import { v4 as uuidv4 } from 'uuid';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStream } from '../../hooks/agent-provider';
 import { useChatEditor } from '../../hooks/use-editor';
-import { useChatStore } from '../../store';
+import { useAppStore, useChatStore } from '../../store';
 import { ExamplePrompts } from '../exmaple-prompts';
-import { ChatModeButton, GeneratingStatus, SendStopButton, WebSearchButton } from './chat-actions';
+import { VoiceInputBar } from '../voice-mode/voice-input-bar';
+import {
+    ChatModeButton,
+    GeneratingStatus,
+    MicrophoneButton,
+    SendStopButton,
+    WebSearchButton,
+} from './chat-actions';
 import { ChatEditor } from './chat-editor';
 import { ImageUpload } from './image-upload';
 
@@ -64,6 +71,7 @@ export const ChatInput = ({
     const { dropzonProps, handleImageUpload } = useImageAttachment();
     const { push } = useRouter();
     const chatMode = useChatStore(state => state.chatMode);
+    const isVoiceMode = useAppStore(state => state.isVoiceMode);
     const sendMessage = async () => {
         if (
             !isSignedIn &&
@@ -160,6 +168,7 @@ export const ChatInput = ({
                                                 <ChatModeButton />
                                                 {/* <AttachmentButton /> */}
                                                 <WebSearchButton />
+                                                <MicrophoneButton />
                                                 {/* <ToolsMenu /> */}
                                                 <ImageUpload
                                                     id="image-attachment"
@@ -206,7 +215,7 @@ export const ChatInput = ({
             <Flex items="center" justify="center" gap="sm">
                 {/* <ScrollToBottomButton /> */}
             </Flex>
-            {renderChatInput()}
+            {isVoiceMode ? <VoiceInputBar /> : renderChatInput()}
         </>
     );
 
